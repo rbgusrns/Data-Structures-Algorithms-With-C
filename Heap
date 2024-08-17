@@ -1,0 +1,165 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct tagNode
+{
+    int Data;
+} Node;
+
+typedef struct tagHeap
+{
+    Node* Nodes;
+    int Capacity;
+    int UsedSize;
+} Heap;
+
+Heap* CreateHeap( int InitialSize );
+void DestroyHeap( Heap* H );
+void InsertHeap( Heap*H , int NewData );
+Node* DeleteMin( Heap*H );
+int GetParent( int Index );
+int GetLeftChild( int Index );
+void SwapNodes( Heap*H, int Index1, int Index2 );
+void PrintHeap( Heap*H );
+
+int main() 
+{
+    Heap* H = CreateHeap( 5 );
+    Node* Popped;
+    InsertHeap( H, 3 );
+    InsertHeap( H, 10 );
+    InsertHeap( H, 15 );
+    InsertHeap( H, 1 );
+    InsertHeap( H, 2 );
+
+    while(H->UsedSize)
+    {
+        Popped = DeleteMin(H);
+        printf("\nMin = %d\n",Popped->Data);
+        PrintHeap(H);
+        printf("\nCap = %d",H->Capacity);
+    }
+
+    return 0;
+}
+
+int GetParent( int Index )
+{
+    return ( (Index-1) / 2 );
+}
+int GetLeftChild( int Index )
+{
+    return ( Index * 2 + 1 );
+}
+
+Heap* CreateHeap( int InitialSize )
+{
+    Heap* H = (Heap*)malloc(sizeof(Heap));
+
+    H->Nodes = (Node*)malloc(sizeof(Node)*InitialSize);
+    H->UsedSize = 0;
+    H->Capacity = InitialSize;
+
+    return H;
+}
+
+void DestroyHeap( Heap* H )
+{
+    free(H->Nodes);
+    free(H);
+}
+
+void SwapNodes( Heap*H, int Index1, int Index2 )
+{
+    int Temp = H->Nodes[Index1].Data;
+    H->Nodes[Index1].Data = H->Nodes[Index2].Data;
+    H->Nodes[Index2].Data = Temp;
+}
+
+void PrintHeap( Heap*H )
+{
+    for(int i=0; i<(H->UsedSize);i++)
+    {
+        printf("%d ",H->Nodes[i].Data);
+    }
+}
+
+void InsertHeap( Heap*H , int NewData )
+{
+    if( !(H->UsedSize) ) 
+    {
+        H->Nodes[0].Data = NewData;
+        H->UsedSize++;
+    }
+    else
+    {
+        if( H->UsedSize == H->Capacity )
+        {
+            H->Capacity*=2;
+            H->Nodes = (Node*)realloc(H->Nodes,sizeof(Node)*H->Capacity);
+        }
+
+        H->Nodes[H->UsedSize].Data = NewData;
+        int NowIndex = H->UsedSize;
+        int Parent;
+        while(1)
+        {
+            if(!NowIndex) break;
+            
+            Parent = GetParent(NowIndex);
+
+            if( H->Nodes[Parent].Data > H->Nodes[NowIndex].Data )
+            {
+                SwapNodes( H, NowIndex, Parent);
+                NowIndex = Parent;
+            }
+            else break;
+        }
+        H->UsedSize++;
+    }
+}
+Node* DeleteMin( Heap*H )
+{
+
+    int Parent = -1;
+    int Left = -1;
+    int Right = -1;
+    Node* Root = (Node*)malloc(sizeof(Node));
+
+    memcpy(Root,&H->Nodes[0],sizeof(Node));
+    memset(&H->Nodes[0],0,sizeof(Node));
+
+    H->UsedSize--;
+
+    SwapNodes(H,0,H->UsedSize);
+    int NowIndex = 0;
+    int SelectChild = 0;
+    while(1)
+    {
+        Left = GetLeftChild(NowIndex);
+        Right = Left+1;
+
+        if( Left >= H->UsedSize ) break;
+
+        if( Right >= H->UsedSize ) SelectChild = Left;
+
+        else
+        {
+            SelectChild = ( H->Nodes[Left].Data < H->Nodes[Right].Data ) ? Left : Right ;
+        }
+
+        if( H->Nodes[NowIndex].Data > H->Nodes[SelectChild].Data ) SwapNodes(H,NowIndex,SelectChild);
+
+        else break;
+    }
+
+    if( H->UsedSize < H->Capacity / 2) 
+    {
+        H->Capacity /= 2;
+        H->Nodes = (Node*)realloc(H->Nodes,sizeof(Node)*(H->Capacity));
+    }
+    
+
+    return Root;
+}
