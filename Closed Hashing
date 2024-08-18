@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct tagNode
+{
+    char* Key;
+    char* Value;
+
+    struct tagNode* Next;
+}Node;
+
+typedef Node* List;
+
+typedef struct tagTable
+{
+    int Tablesize;
+    List* Table; //포인터들의 해시테이블. 포인터들을 가리키는 List(더블 포인터)
+}HashTable;
+
+Node* CreateNode( char* key, char* value )
+{
+    Node* NewNode = (Node*)malloc(sizeof(Node));
+    
+    NewNode->Key = (char*)malloc(sizeof(char)*(strlen(key)+1));
+    strcpy(NewNode->Key,key);
+    
+    NewNode->Value = (char*)malloc(sizeof(char)*(strlen(value)+1));
+    strcpy(NewNode->Value,value);
+    
+    NewNode->Next = NULL;
+
+    return NewNode;
+}
+
+int Hash( char* Key, int Keylength, int tablesize )
+{
+    int HashValue = 0;
+    for(int i=0; i<Keylength; i++)
+    {
+        HashValue = (HashValue<<3) + Key[i]; 
+    }
+
+    printf("HV: %d\n",HashValue);
+    return HashValue % tablesize;
+}
+
+void Set_HT( HashTable*HT ,char* key, char* value )
+{
+    int Adress = Hash( key, strlen(key), HT->Tablesize );
+    
+    Node* NewNode = CreateNode(key,value);
+
+    if(HT->Table[Adress] == NULL)
+    {
+       HT->Table[Adress] = NewNode; 
+    }
+        
+    else
+    {
+        List L = HT->Table[Adress];
+        NewNode->Next = L;
+        HT->Table[Adress] = NewNode;
+
+        printf("Collision occured : Key(%s), Adress(%d)\n",key, Adress);
+    }
+    
+}
+
+char* Get_HT( HashTable*HT, char* key )
+{
+
+    int Adress = Hash( key, strlen(key), HT->Tablesize );
+
+    List TheList = HT->Table[Adress];
+    List Target = NULL;
+
+    if( TheList == NULL ) return NULL;
+
+    while(1)
+    {
+        if(!strcmp(TheList->Key,key))
+        {
+            Target = TheList;
+            break;
+        }
+
+        if(TheList->Next == NULL ) break;
+
+        else TheList = TheList->Next;
+    }
+
+    return Target->Value;
+}
+
+int main() 
+{
+    HashTable* HT = (HashTable*)malloc(sizeof(HashTable));
+    HT->Tablesize = 12298;
+    HT->Table = (List*)malloc(sizeof(List)*(HT->Tablesize));
+    memset(HT->Table, 0, sizeof(List)*(HT->Tablesize));
+
+    Set_HT(HT, "ABCDEFGHIJ", "Africa");
+    Set_HT(HT, "BA", "Brazil");
+    Set_HT(HT, "CC", "Canada");
+    Set_HT(HT, "DD", "Denmark");
+    Set_HT(HT, "EE", "England");
+
+    printf("Key: %s, Value: %s\n","ABCDEFGHIJ", Get_HT(HT,"ABCDEFGHIJ"));
+    printf("Key: %s, Value: %s\n","BA", Get_HT(HT,"BA"));
+    printf("Key: %s, Value: %s\n","CC", Get_HT(HT,"CC"));
+    printf("Key: %s, Value: %s\n","DD", Get_HT(HT,"DD"));
+    printf("Key: %s, Value: %s\n","EE", Get_HT(HT,"EE"));
+   
+    return 0;
+}
