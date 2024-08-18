@@ -1,0 +1,66 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+enum ElementStatus
+{
+    EMPTY = 0,
+    OCCUPIED = 1
+};
+
+typedef struct tagNode
+{
+    char* Key;
+    char* Value;
+
+    enum ElementStatus Status;
+}Node;
+
+typedef struct
+{
+    int OccupiedCount;
+    int Tablesize;
+    Node* Table;
+}HashTable;
+
+void Set_HT( HashTable**HT, char*Key, char*Value );
+
+void ClearElement(Node* _Node)
+{
+    if(_Node->Status == EMPTY)
+        return;
+
+    free(_Node->Key);
+    free(_Node->Value);
+}
+
+void DestroyHT( HashTable*HT )
+{
+    for(int i=0; i<HT->Tablesize; i++)
+    {
+        ClearElement(&(HT->Table[i]));
+    }
+
+    free(HT->Table);
+    free(HT);
+}
+
+int Hash( char* Key, int Length, int Tablesize )
+{
+    int HashValue = 0;
+    for(int i=0;i<Length;i++)
+    {
+        HashValue = (HashValue<<3) + Key[i];
+    }
+
+    return HashValue % Tablesize;
+}
+
+int Hash2( char* Key, int Length, int Tablesize )
+{
+    int HashValue = 0;
+    for(int i=0;i<Length;i++)
+    {
+        HashValue = (HashValue<<2) + Key[i];
+    }
+
