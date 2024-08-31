@@ -1,0 +1,316 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+enum VisitMode { Visited, NotVisited };
+
+
+
+typedef struct tagVertex
+{
+    int Data;
+    int Visited;
+    int Index;
+
+    struct tagVertex* Next; // 정점 포인터
+
+    struct tagEdge* AdjacencyList; // 간선 포인터
+}Vertex;
+
+typedef struct tagEdge
+{
+    int Weight;
+    struct tagEdge* Next; // 간선 포인터
+    Vertex* From;
+    Vertex* Target;
+} Edge;
+
+typedef struct tagGraph
+{
+    Vertex* Vertices;
+    int VertexCount;
+}Graph;
+
+typedef struct tagNode
+{
+    struct tagNode* NextNode;
+    Vertex* Data;
+
+}Node;
+
+
+Node* CreateNode( Vertex* NewV )
+{
+    Node* NewNode = (Node*)malloc(sizeof(Node));
+    NewNode->Data = NewV;
+    NewNode->NextNode = NULL;
+
+    return NewNode;
+}
+
+void AddHead( Node**List, Node* NewNode )
+{
+    if((*List)==NULL)
+    {
+        (*List) = NewNode;
+    }
+    else
+    {
+        NewNode->NextNode = (*List);
+        (*List) = NewNode;
+    }
+}
+
+
+Graph* CreateGraph();
+void DestroyGraph(Graph* G);
+
+Vertex* CreateVertex( int Data );
+void DestroyVertex( Vertex* V );
+
+Edge* CreateEdge( Vertex* From, Vertex* Target, int Weight );
+void DestroyEdge( Edge* E );
+
+void AddVertex( Graph* G, Vertex* V );
+void AddEdge( Vertex* V, Edge* E );
+void PrintGraph( Graph* G );
+
+/*
+
+깊이우선탐색을 이용한 위상 정렬
+
+1. 깊이 우선 탐색을 통해 가장 깊은 곳의 정점을 찾는다.
+2. 이 정점을 방문했다고 표시하고, 리스트의 헤드로 지정한다.
+3. 바로 이전 정점에 대해 다시 점검한다.
+4. 모든 정점을 방문했을 경우, 종료한다.
+
+*/
+
+void TS_DFS( Vertex* V, Node** List )
+{
+    Edge* E = NULL;
+
+    V->Visited = Visited;
+
+    E = V->AdjacencyList;
+
+    while( E != NULL)
+    {
+        if(E->Target != NULL && E->Target->Visited == NotVisited) TS_DFS(E->Target,List);
+        E = E->Next;
+    }
+
+    printf("%c\n",V->Data);
+
+    AddHead(List,CreateNode(V));
+}
+
+void TopologicalSort(Vertex* V, Node** List)
+{
+    while( V != NULL && V->Visited == NotVisited )
+        {
+            TS_DFS(V,List);
+            V = V->Next;
+        }
+}
+
+
+int main( void )
+{
+    Node* SortedList  = NULL;
+    Node* CurrentNode = NULL;
+
+    //  그래프 생성     
+    Graph* graph = CreateGraph();
+    
+    //  정점 생성 
+    
+    Vertex* A = CreateVertex( 'A' );
+    Vertex* B = CreateVertex( 'B' );
+    Vertex* C = CreateVertex( 'C' );
+    Vertex* D = CreateVertex( 'D' );
+    Vertex* E = CreateVertex( 'E' );
+    Vertex* F = CreateVertex( 'F' );
+    Vertex* G = CreateVertex( 'G' );
+    Vertex* H = CreateVertex( 'H' );
+    
+    //  그래프에 정점을 추가 
+    AddVertex( graph, A );
+    AddVertex( graph, B );
+    AddVertex( graph, C );
+    AddVertex( graph, D );
+    AddVertex( graph, E );
+    AddVertex( graph, F );
+    AddVertex( graph, G );
+    AddVertex( graph, H );
+
+    //  정점과 정점을 간선으로 잇기 
+    AddEdge( A, CreateEdge( A, C, 0 ) );
+    AddEdge( A, CreateEdge( A, D, 0 ) );
+
+    AddEdge( B, CreateEdge( B, C, 0 ) );
+    AddEdge( B, CreateEdge( B, E, 0 ) );
+
+    AddEdge( C, CreateEdge( C, F, 0 ) );
+    
+    AddEdge( D, CreateEdge( D, F, 0 ) );
+    AddEdge( D, CreateEdge( D, G, 0 ) );
+
+    AddEdge( E, CreateEdge( E, G, 0 ) );
+
+    AddEdge( F, CreateEdge( F, H, 0 ) );
+    
+    AddEdge( G, CreateEdge( G, H, 0 ) );
+
+    //  위상 정렬 
+    TopologicalSort( graph->Vertices, &SortedList );
+
+ 
+    printf("Topological Sort Result : ");
+
+    CurrentNode = SortedList;
+
+    while ( CurrentNode != NULL )
+    {
+        printf("%C ", CurrentNode->Data->Data );
+        CurrentNode = CurrentNode->NextNode;
+    }
+    printf("\n");
+    
+
+    //  그래프 소멸 
+    DestroyGraph( graph );
+
+    return 0;
+}
+
+Graph* CreateGraph()
+{
+    Graph* G = (Graph*)malloc(sizeof(Graph));
+    G->VertexCount = 0;
+    G->Vertices = NULL;
+
+    return G;
+}
+
+void DestroyGraph(Graph* G)
+{
+    while( G->Vertices != NULL )
+    {
+        Vertex* Temp = G->Vertices->Next;
+        DestroyVertex(G->Vertices);
+        G->Vertices = Temp;
+    }
+    free(G);
+}
+
+Vertex* CreateVertex(int Data)
+{
+    Vertex* V = (Vertex*)malloc(sizeof(Vertex));
+    V->Data = Data;
+    V->Visited = NotVisited;
+    V->Index = -1;
+    V->Next = NULL;
+    V->AdjacencyList = NULL;
+
+    return V;
+}
+
+void DestroyVertex( Vertex* V )
+{
+    while( V->AdjacencyList != NULL )
+    {
+        Edge* Temp = V->AdjacencyList->Next;
+        DestroyEdge(V->AdjacencyList);
+        V->AdjacencyList = Temp;
+    }
+
+    free(V);
+}
+
+Edge* CreateEdge( Vertex* From, Vertex* Target, int Weight )
+{
+    Edge* E = (Edge*)malloc(sizeof(Edge));
+
+    E->From = From;
+    E->Target = Target;
+    E->Weight = Weight;
+    E->Next = NULL;
+
+    return E;
+}
+
+void DestroyEdge( Edge* E )
+{
+    free(E);
+}
+
+void AddVertex( Graph* G, Vertex* V )
+{
+    if(G->Vertices == NULL)
+    {
+        G->Vertices = V;
+    }
+    else
+    {
+        Vertex* NowV = G->Vertices;
+        while( NowV->Next != NULL )
+        {
+            NowV = NowV->Next;
+        }
+        NowV->Next = V;
+    }
+
+    V->Index = G->VertexCount++;
+}
+
+void AddEdge( Vertex* V, Edge* E )
+{
+    Edge* NowE = V->AdjacencyList;
+
+    if(V->AdjacencyList == NULL)
+    {
+        V->AdjacencyList = E;
+    }
+
+    else
+    {
+        while( NowE->Next != NULL )
+        {
+            NowE = NowE->Next;
+        }
+        NowE->Next = E;
+    }
+}
+
+void PrintGraph( Graph* G )
+{
+    Vertex* V = NULL;
+    Edge* E = NULL;
+
+    if( (V = G->Vertices) == NULL ) return; //V에 G의 정점포인터를 넣음. 이때 NULL이면 종료
+
+    while( V != NULL )
+    {
+        printf("%c : ",V->Data);
+
+        if( (E = V->AdjacencyList) == NULL ) //이웃이 없으면 다음 정점으로 이동
+        {
+            V = V->Next;
+            printf("\n");
+            continue;
+        }
+
+        while( E != NULL )
+        {
+            printf("%c[%d] ", E->Target->Data, E->Weight);
+            E = E->Next;
+        }
+
+        printf("\n");
+
+        V = V->Next;
+    }
+
+    printf("\n");
+}
